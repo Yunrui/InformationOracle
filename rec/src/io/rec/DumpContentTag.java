@@ -25,21 +25,23 @@ import org.apache.hadoop.util.ReflectionUtils;
 import org.apache.mahout.math.Vector;
 import org.apache.mahout.math.SequentialAccessSparseVector;
 
-public class SequenceFileOperator {
+public class DumpContentTag extends Activity {
     private Configuration conf = new Configuration();
+    private String dicFile;
+    private String sequenceFile;
 
-    public SequenceFileOperator() {
+    public DumpContentTag(String dictionaryFile, String sequenceFile) {
         this.conf.setStrings("dfs.namenode.adress", "192.168.59.103:8020");
+	this.dicFile = dictionaryFile;
+	this.sequenceFile = sequenceFile;
+    }
+    public void doCore() throws IOException {
+        Map<String, String> dic = this.readDictionary(this.dicFile);
+        this.dumpToHBase(dic, this.sequenceFile);
     }
 
-    public static void main(String[] args) throws IOException {
-        SequenceFileOperator docToSeqFileWriter = new SequenceFileOperator();
-        String dictionaryFilePath = args[0];
-        String sequenceFilePath = args[1];
-
-        Map<String, String> dic = docToSeqFileWriter.readDictionary(dictionaryFilePath);
-
-        docToSeqFileWriter.dumpToHBase(dic, sequenceFilePath);
+    public String getName() {
+        return "DumpContentTag";
     }
 
       private Map<String, String> readDictionary(String sequenceFilePath) throws IOException {

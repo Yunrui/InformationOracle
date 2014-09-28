@@ -17,17 +17,21 @@ import org.apache.hadoop.hbase.client.*;
 import org.apache.hadoop.hbase.filter.Filter;
 import org.apache.hadoop.hbase.util.Bytes;
 
-public abstract class Activity {
+public class RecRun {
 
-    public abstract String getName();
+    public static void main(String[] args) throws IOException {
+        String zookeeper = args[0];
+        List<Activity> operations = new ArrayList<Activity>();
+        
+        RefreshContentData rcd = new RefreshContentData(zookeeper);
+        // operations.add(rcd);
+        
+        DumpContentMetadata dcm = new DumpContentMetadata(zookeeper);
+        operations.add(dcm);
 
-    public abstract void doCore() throws IOException;
-
-    public void run() throws IOException {
-        String name = this.getName();
-        System.out.println("Starting operation " + name + ".....");
-        this.doCore();
-        System.out.println("End opeartion " + name);
+        for (Activity ac : operations) {
+            ac.run();
+        }
     }
 }
 

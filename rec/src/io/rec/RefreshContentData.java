@@ -17,27 +17,15 @@ import org.apache.hadoop.hbase.client.*;
 import org.apache.hadoop.hbase.filter.Filter;
 import org.apache.hadoop.hbase.util.Bytes;
 
-public class RefreshContentData {
+public class RefreshContentData extends Activity {
+    private Configuration conf = HBaseConfiguration.create();
 
-    public static void main(String[] args) throws IOException {
-        String zookeeper = args[0];
-        Configuration conf = HBaseConfiguration.create();
+    public RefreshContentData(String zookeeper) {
         conf.set("hbase.zookeeper.quorum", zookeeper);
         conf.set("hbase.zookeeper.property.clientPort", "2181");
-        try {
-            Path pt=new Path("hdfs://localhost:8020/io/meta/dump");
-            FileSystem fs = FileSystem.get(new URI("hdfs://localhost:8020"), new Configuration());
-            BufferedReader br = new BufferedReader(new InputStreamReader(fs.open(pt)));
-            String line;
-            line=br.readLine();
-            while (line != null) {
-                System.out.println(line);
-                line = br.readLine();
-            }
-        }
-        catch(URISyntaxException e) {
-        }
+    }
 
+    public void doCore() throws IOException {
         // clear column family d 
         byte[] name = Bytes.toBytes("content");
         HBaseAdmin admin = new HBaseAdmin(conf);
@@ -55,7 +43,10 @@ public class RefreshContentData {
         admin.modifyTable(name, table);
         admin.enableTable(name);
         admin.close();
+    }
 
+    public String getName() {
+        return "RefreshContentData";
     }
 }
 
