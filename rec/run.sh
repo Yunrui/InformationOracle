@@ -30,26 +30,17 @@ echo "  Training Method: $method"
 echo "  Training Script: $script"
 echo "  Training Weight: $weight"
 
-echo "\033[40;33mCompiling.......... \033[0m"
-javac -cp "lib/hadoop/*:lib/mahout/*:." src/SequenceFileOperator.java
-javac -cp "lib/hadoop/*:lib/mahout/*:." src/LDADumper.java
-javac -cp "lib/hadoop/*:lib/mahout/*:lib/hbase/*:lib/*:." src/RefreshContentData.java
-
+echo "\033[40;33mTokenize Articles.......... \033[0m"
+echo 'J$p1ter' | sudo -u hdfs hadoop fs -rmr /io/result/*
+echo 'J$p1ter' | sudo -u hdfs -S mahout seqdirectory -c UTF-8 -i $articleDirectory -o /io/result/seq
+echo 'J$p1ter' | sudo -u hdfs -S mahout seq2sparse -i /io/result/seq/par* -o /io/result/weight -s 50 -md 10  -ng 2 -ml 50 -x 20 -seq -wt $weight
 
 echo "\033[40;33mPreparing Execution Context.......... \033[0m"
-echo 'J$p1ter' | sudo -u hdfs -S hadoop fs -rmr /tmp/newsletter
-echo 'J$p1ter' | sudo -u hdfs hadoop fs -rmr /io/result/*
-cd src
-java -cp "../lib/hadoop/*:../lib/hadoop/client/*:../lib/mahout/*:../lib/*:../lib/hbase/*:." RefreshContentData $zookeeper
-cd ..
-cp $script /tmp/
+java -cp "lib/hadoop/*:lib/hadoop/client/*:lib/mahout/*:lib/*:lib/hbase/*:*:." io.rec.RefreshContentData $zookeeper
 
 echo "\033[40;33mDumping Article Metadata.......... \033[0m"
 echo 'J$p1ter' | sudo -u hdfs -S hadoop fs -cat $metaDirectory | python dumpContentMeta.py | hbase shell
 
-echo "\033[40;33mTokenize Articles.......... \033[0m"
-echo 'J$p1ter' | sudo -u hdfs -S mahout seqdirectory -c UTF-8 -i $articleDirectory -o /io/result/seq
-echo 'J$p1ter' | sudo -u hdfs -S mahout seq2sparse -i /io/result/seq/par* -o /io/result/weight -s 50 -md 10  -ng 2 -ml 50 -x 20 -seq -wt $weight
 
 if [ $method = 'tag' ]
 then
@@ -66,5 +57,7 @@ then
 fi
 
 echo "\033[40;33mCalculating Recommendation.......... \033[0m"
+cp $script /tmp/
 echo 'J$p1ter' | sudo -u hdfs -S pig -f /tmp/$script
+echo 'J$p1ter' | sudo -u hdfs -S hadoop fs -rmr /tmp/newsletter
 echo 'J$p1ter' | sudo -u hdfs -S hadoop fs -cat /tmp/newsletter/par* | python insert.py "$label"
