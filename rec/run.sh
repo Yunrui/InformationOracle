@@ -1,9 +1,10 @@
 #!/bin/sh
 
-method=$1
-articleDirectory=$2
-metaDirectory=$3/*
-label=$4
+zookeeper=$1
+method=$2
+articleDirectory=$3
+metaDirectory=$4/*
+label=$5
 
 #Choose training  method
 if [ $method = 'lda' ]
@@ -38,7 +39,9 @@ javac -cp "lib/hadoop/*:lib/mahout/*:lib/hbase/*:lib/*:." src/RefreshContentData
 echo "\033[40;33mPreparing Execution Context.......... \033[0m"
 echo 'J$p1ter' | sudo -u hdfs -S hadoop fs -rmr /tmp/newsletter
 echo 'J$p1ter' | sudo -u hdfs hadoop fs -rmr /io/result/*
-echo "alter 'content', {NAME=>'d', METHOD=>'delete'}; alter 'content', {NAME=>'d'}" | hbase shell
+cd src
+java -cp "../lib/hadoop/*:../lib/hadoop/client/*:../lib/mahout/*:../lib/*:../lib/hbase/*:." RefreshContentData $zookeeper
+cd ..
 cp $script /tmp/
 
 echo "\033[40;33mDumping Article Metadata.......... \033[0m"
