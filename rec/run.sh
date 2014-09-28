@@ -32,6 +32,7 @@ echo "  Training Weight: $weight"
 echo "\033[40;33mCompiling.......... \033[0m"
 javac -cp "lib/hadoop/*:lib/mahout/*:." src/SequenceFileOperator.java
 javac -cp "lib/hadoop/*:lib/mahout/*:." src/LDADumper.java
+javac -cp "lib/hadoop/*:lib/mahout/*:lib/hbase/*:." src/RefreshContentData.java
 
 
 echo "\033[40;33mPreparing Execution Context.......... \033[0m"
