@@ -37,7 +37,7 @@ echo 'J$p1ter' | sudo -u hdfs -S mahout seq2sparse -i /io/result/seq/par* -o /io
 
 echo "\033[40;33mPreparing Execution Context.......... \033[0m"
 java -cp "lib/hadoop/*:lib/hadoop/client/*:lib/mahout/*:lib/*:lib/hbase/*:*:." io.rec.RecRun $zookeeper
-
+ 
 
 if [ $method = 'tag' ]
 then

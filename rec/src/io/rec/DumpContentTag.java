@@ -24,16 +24,23 @@ import org.apache.hadoop.io.Writable;
 import org.apache.hadoop.util.ReflectionUtils;
 import org.apache.mahout.math.Vector;
 import org.apache.mahout.math.SequentialAccessSparseVector;
+import org.apache.hadoop.hbase.HBaseConfiguration;
+import org.apache.hadoop.hbase.HColumnDescriptor;
+import org.apache.hadoop.hbase.HTableDescriptor;
+import org.apache.hadoop.hbase.client.*;
+import org.apache.hadoop.hbase.filter.Filter;
+import org.apache.hadoop.hbase.util.Bytes;
 
 public class DumpContentTag extends Activity {
     private Configuration conf = new Configuration();
-    private String dicFile;
-    private String sequenceFile;
+    private String dicFile = "/io/result/weight/dictionary.file-0";
+    private String sequenceFile = "/io/result/weight/tfidf-vectors/part-r-00000";
+    private Configuration hbaseConf = HBaseConfiguration.create();
 
-    public DumpContentTag(String dictionaryFile, String sequenceFile) {
+    public DumpContentTag(String zookeeper) {
         this.conf.setStrings("dfs.namenode.adress", "192.168.59.103:8020");
-	this.dicFile = dictionaryFile;
-	this.sequenceFile = sequenceFile;
+        this.hbaseConf.set("hbase.zookeeper.quorum", zookeeper);
+        this.hbaseConf.set("hbase.zookeeper.property.clientPort", "2181");
     }
     public void doCore() throws IOException {
         Map<String, String> dic = this.readDictionary(this.dicFile);
@@ -45,7 +52,7 @@ public class DumpContentTag extends Activity {
     }
 
     private Map<String, String> readDictionary(String sequenceFilePath) throws IOException {
-        Option filePath = SequenceFile.Reader.file(new Path(sequenceFilePath));
+        Option filePath = SequenceFile.Reader.file(new Path("hdfs://localhost:8020" + sequenceFilePath));
         SequenceFile.Reader sequenceFileReader = new SequenceFile.Reader(conf, filePath);
         Writable key = (Writable) ReflectionUtils.newInstance(sequenceFileReader.getKeyClass(), conf);
         Writable value = (Writable) ReflectionUtils.newInstance(sequenceFileReader.getValueClass(), conf);
@@ -64,11 +71,12 @@ public class DumpContentTag extends Activity {
     }
 
     private void dumpToHBase(Map<String, String> dictionary, String sequenceFilePath) throws IOException {
-        Option filePath = SequenceFile.Reader.file(new Path(sequenceFilePath));
+        Option filePath = SequenceFile.Reader.file(new Path("hdfs://localhost:8020" + sequenceFilePath));
         SequenceFile.Reader sequenceFileReader = new SequenceFile.Reader(conf, filePath);
         Writable key = (Writable) ReflectionUtils.newInstance(sequenceFileReader.getKeyClass(), conf);
         Writable value = (Writable) ReflectionUtils.newInstance(sequenceFileReader.getValueClass(), conf);
 
+        HTable table = new HTable(this.hbaseConf, "content");
 
         try {
             while (sequenceFileReader.next(key, value)) {
@@ -93,8 +101,8 @@ public class DumpContentTag extends Activity {
 
                     if (entry.getValue().toString().contains("\n"))
                         continue;
-
-                    System.out.printf("put 'content', '%s', 'd:%s', %f\n", key, entry.getKey(), entry.getValue());
+                    
+		    table.put(new Put(Bytes.toBytes(key.toString())).add(Bytes.toBytes("d"), Bytes.toBytes(entry.getKey().toString()), Bytes.toBytes(entry.getValue().toString())));
 
                     if (++i >= 20) {
                         break;

@@ -22,7 +22,7 @@ public class DumpContentMetadata extends Activity {
     
     public DumpContentMetadata(String zookeeper) {
         conf.set("hbase.zookeeper.quorum", zookeeper);
-	conf.set("hbase.zookeeper.property.clientPort", "2181");
+        conf.set("hbase.zookeeper.property.clientPort", "2181");
     }
 
     public void doCore() throws IOException {

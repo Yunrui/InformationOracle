@@ -29,6 +29,9 @@ public class RecRun {
         DumpContentMetadata dcm = new DumpContentMetadata(zookeeper);
         operations.add(dcm);
 
+        DumpContentTag dct = new DumpContentTag(zookeeper);
+        operations.add(dct);
+
         for (Activity ac : operations) {
             ac.run();
         }
