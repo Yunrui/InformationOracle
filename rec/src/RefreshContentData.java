@@ -29,7 +29,14 @@ public class RefreshContentData {
         */
 
         HBaseAdmin admin = new HBaseAdmin(conf);
-        admin.deleteColumn(Bytes.toBytes("test3"), "d");
+        HTableDescriptor table = admin.getTableDescriptor(Bytes.toBytes("test3"));
+        if (table.hasFamily(Bytes.toBytes("d"))) {
+            table.removeFamily(Bytes.toBytes("d"));
+        }
+
+        HColumnDescriptor desc = new HColumnDescriptor("d");
+        table.addFamily(desc);
+        admin.close();
     }
 }
 
