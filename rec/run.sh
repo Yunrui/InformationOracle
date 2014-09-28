@@ -29,13 +29,15 @@ echo "  Training Method: $method"
 echo "  Training Script: $script"
 echo "  Training Weight: $weight"
 
+echo "\033[40;33mCompiling.......... \033[0m"
+javac -cp "lib/hadoop/*:lib/mahout/*:." src/SequenceFileOperator.java
+javac -cp "lib/hadoop/*:lib/mahout/*:." src/LDADumper.java
+
 
 echo "\033[40;33mPreparing Execution Context.......... \033[0m"
 echo 'J$p1ter' | sudo -u hdfs -S hadoop fs -rmr /tmp/newsletter
 echo 'J$p1ter' | sudo -u hdfs hadoop fs -rmr /io/result/*
 echo "alter 'content', {NAME=>'d', METHOD=>'delete'}; alter 'content', {NAME=>'d'}" | hbase shell
-echo 'J$p1ter' | sudo -u root -S javac -cp "/opt/cloudera/parcels/CDH/lib/hadoop/*:/opt/cloudera/parcels/CDH/lib/hadoop/client/*:/opt/cloudera/parcels/CDH/lib/mahout/*:." SequenceFileOperator.java
-echo 'J$p1ter' | sudo -u root -S javac -cp "/opt/cloudera/parcels/CDH/lib/hadoop/*:/opt/cloudera/parcels/CDH/lib/hadoop/client/*:/opt/cloudera/parcels/CDH/lib/mahout/*:." LDADumper.java
 cp $script /tmp/
 
 echo "\033[40;33mDumping Article Metadata.......... \033[0m"
