@@ -17,9 +17,9 @@ import org.apache.hadoop.hbase.client.*;
 import org.apache.hadoop.hbase.filter.Filter;
 import org.apache.hadoop.hbase.util.Bytes;
 
-public class RefreshContentData {
+public class Activity {
 
-    public static void main(String[] args) throws IOException {
+    public static vod main(String[] args) throws IOException {
         String zookeeper = args[0];
         Configuration conf = HBaseConfiguration.create();
         conf.set("hbase.zookeeper.quorum", zookeeper);
