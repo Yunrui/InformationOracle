@@ -44,7 +44,7 @@ public class DumpContentTag extends Activity {
         return "DumpContentTag";
     }
 
-      private Map<String, String> readDictionary(String sequenceFilePath) throws IOException {
+    private Map<String, String> readDictionary(String sequenceFilePath) throws IOException {
         Option filePath = SequenceFile.Reader.file(new Path(sequenceFilePath));
         SequenceFile.Reader sequenceFileReader = new SequenceFile.Reader(conf, filePath);
         Writable key = (Writable) ReflectionUtils.newInstance(sequenceFileReader.getKeyClass(), conf);
@@ -53,17 +53,17 @@ public class DumpContentTag extends Activity {
         Map<String, String> dic = new HashMap<String, String>();
 
         try {
-          while (sequenceFileReader.next(key, value)) {
-            dic.put(value.toString(), key.toString());
-          }
+            while (sequenceFileReader.next(key, value)) {
+                dic.put(value.toString(), key.toString());
+            }
         } finally {
-          IOUtils.closeStream(sequenceFileReader);
+            IOUtils.closeStream(sequenceFileReader);
         }
 
         return dic;
-      }
+    }
 
-      private void dumpToHBase(Map<String, String> dictionary, String sequenceFilePath) throws IOException {
+    private void dumpToHBase(Map<String, String> dictionary, String sequenceFilePath) throws IOException {
         Option filePath = SequenceFile.Reader.file(new Path(sequenceFilePath));
         SequenceFile.Reader sequenceFileReader = new SequenceFile.Reader(conf, filePath);
         Writable key = (Writable) ReflectionUtils.newInstance(sequenceFileReader.getKeyClass(), conf);
@@ -71,51 +71,43 @@ public class DumpContentTag extends Activity {
 
 
         try {
-          while (sequenceFileReader.next(key, value)) {
+            while (sequenceFileReader.next(key, value)) {
+                VectorWritable vector = (VectorWritable) value;
 
-            /*
-            if (!key.toString().contains("highscalability")) {
-              continue;
+                Map<String, Double> doc = new HashMap<String, Double>();
+                for (Iterator<Vector.Element> iter = ((SequentialAccessSparseVector)vector.get()).iterator(); iter.hasNext(); ) {
+                    Vector.Element element = iter.next();
+
+                    String feature = dictionary.get(String.valueOf(element.index()));
+                    Double frequency = element.get();
+
+                    if (frequency > 0 && !feature.toString().contains("'")) {
+                        doc.put(feature, frequency);
+                    }
+                }
+
+                int i = 0;
+                List orderedDoc = new LinkedList(sortByValue(doc).entrySet());
+                for(Iterator it = orderedDoc.iterator(); it.hasNext();) {
+                    Map.Entry entry = (Map.Entry) it.next();
+
+                    if (entry.getValue().toString().contains("\n"))
+                        continue;
+
+                    System.out.printf("put 'content', '%s', 'd:%s', %f\n", key, entry.getKey(), entry.getValue());
+
+                    if (++i >= 20) {
+                        break;
+                    }
+                }
+
             }
-            */
-
-            VectorWritable vector = (VectorWritable) value;
-
-            Map<String, Double> doc = new HashMap<String, Double>();
-            for (Iterator<Vector.Element> iter = ((SequentialAccessSparseVector)vector.get()).iterator(); iter.hasNext(); ) {
-              Vector.Element element = iter.next();
-
-              String feature = dictionary.get(String.valueOf(element.index()));
-              Double frequency = element.get();
-
-              if (frequency > 0 && !feature.toString().contains("'")) {
-                doc.put(feature, frequency);
-
-              }
-            }
-
-           int i = 0;
-           List orderedDoc = new LinkedList(sortByValue(doc).entrySet());
-           for(Iterator it = orderedDoc.iterator(); it.hasNext();) {
-             Map.Entry entry = (Map.Entry) it.next();
-
-             if (entry.getValue().toString().contains("\n"))
-               continue;
-
-             System.out.printf("put 'content', '%s', 'd:%s', %f\n", key, entry.getKey(), entry.getValue());
-
-             if (++i >= 20) {
-               break;
-             }
-           }
-
-          }
         } finally {
-          IOUtils.closeStream(sequenceFileReader);
+            IOUtils.closeStream(sequenceFileReader);
         }
-      }
+    }
 
-      static Map sortByValue(Map map) {
+    static Map sortByValue(Map map) {
         List list = new LinkedList(map.entrySet());
         Collections.sort(list, new Comparator() {
           public int compare(Object o1, Object o2) {
@@ -125,9 +117,9 @@ public class DumpContentTag extends Activity {
 
         Map result = new LinkedHashMap();
         for (Iterator it = list.iterator(); it.hasNext();) {
-          Map.Entry entry = (Map.Entry)it.next();
-          result.put(entry.getKey(), entry.getValue());
+            Map.Entry entry = (Map.Entry)it.next();
+            result.put(entry.getKey(), entry.getValue());
         }
         return result;
-      }
+    }
 }
