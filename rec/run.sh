@@ -42,7 +42,6 @@ java -cp "lib/hadoop/*:lib/hadoop/client/*:lib/mahout/*:lib/*:lib/hbase/*:*:." i
 if [ $method = 'tag' ]
 then
     echo "\033[40;33mExecute Tag Match.......... \033[0m"
-    java -cp "/opt/cloudera/parcels/CDH/lib/hadoop/*:/opt/cloudera/parcels/CDH/lib/hadoop/client/*:/opt/cloudera/parcels/CDH/lib/mahout/*:." SequenceFileOperator hdfs://v3namenode:8020/io/result/weight/dictionary.file-0 hdfs://v3namenode:8020/io/result/weight/tfidf-vectors/part-r-00000 | hbase shell
 fi
 
 if [ $method = 'lda' ]
