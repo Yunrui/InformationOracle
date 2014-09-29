@@ -21,6 +21,8 @@ public class RecRun {
 
     public static void main(String[] args) throws IOException {
         String zookeeper = args[0];
+        String approach = args[1];
+
         List<Activity> operations = new ArrayList<Activity>();
         
         RefreshContentData rcd = new RefreshContentData(zookeeper);
@@ -28,9 +30,15 @@ public class RecRun {
         
         DumpContentMetadata dcm = new DumpContentMetadata(zookeeper);
         operations.add(dcm);
-
-        DumpContentTag dct = new DumpContentTag(zookeeper);
-        operations.add(dct);
+        System.out.println(approach);
+        if (approach.equals("tag")) {
+          DumpContentTag dct = new DumpContentTag(zookeeper);
+          operations.add(dct);
+	}
+	else if (approach.equals("lda")) {
+	    ScriptActivity sa = new ScriptActivity("echo 'J$p1ter' | sudo -u hdfs -S mahout rowid -i /io/result/weight/tf-vectors -o /io/result/matrix");
+            operations.add(sa);
+	}
 
         for (Activity ac : operations) {
             ac.run();

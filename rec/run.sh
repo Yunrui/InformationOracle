@@ -36,7 +36,7 @@ echo 'J$p1ter' | sudo -u hdfs -S mahout seqdirectory -c UTF-8 -i $articleDirecto
 echo 'J$p1ter' | sudo -u hdfs -S mahout seq2sparse -i /io/result/seq/par* -o /io/result/weight -s 50 -md 10  -ng 2 -ml 50 -x 20 -seq -wt $weight
 
 echo "\033[40;33mPreparing Execution Context.......... \033[0m"
-java -cp "lib/hadoop/*:lib/hadoop/client/*:lib/mahout/*:lib/*:lib/hbase/*:*:." io.rec.RecRun $zookeeper
+java -cp "lib/hadoop/*:lib/hadoop/client/*:lib/mahout/*:lib/*:lib/hbase/*:*:." io.rec.RecRun $zookeeper 
  
 
 if [ $method = 'tag' ]
