@@ -18,83 +18,75 @@ import org.apache.hadoop.mapreduce.lib.output.FileOutputFormat;
 import org.apache.hadoop.mapreduce.lib.output.TextOutputFormat;
 import org.apache.hadoop.util.Tool;
 import org.apache.hadoop.util.ToolRunner;
+import org.apache.hadoop.hbase.HBaseConfiguration;
+import org.apache.hadoop.hbase.HColumnDescriptor;
+import org.apache.hadoop.hbase.HTableDescriptor;
+import org.apache.hadoop.hbase.client.*;
+import org.apache.hadoop.hbase.filter.Filter;
+import org.apache.hadoop.hbase.util.Bytes;
+import org.apache.hadoop.hbase.mapreduce.TableMapReduceUtil;
+import org.apache.hadoop.hbase.io.ImmutableBytesWritable;
+import org.apache.hadoop.hbase.mapreduce.TableMapper;
+import org.apache.hadoop.hbase.mapreduce.TableReducer;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-public class TagMatch implements Tool {
+public class TagMatch {
 
-    public static final Logger log = LoggerFactory.getLogger(TagMatch.class);
-    Configuration configuration;
+    static class MyMap extends TableMapper<ImmutableBytesWritable, IntWritable> {
 
-    public static class MyMap extends Mapper<Object, Text, Text, IntWritable>{
+        private int numRecords = 0;
+        private static final IntWritable one = new IntWritable(1);
+
         @Override
-        protected void map(Object key, Text value, Context context)  throws IOException, InterruptedException {
-            String stuInfo = value.toString();
-            System.out.println("studentInfo:" + stuInfo);
-            log.info("MapSudentInfo:" + stuInfo);
-            StringTokenizer tokenizerArticle = new StringTokenizer(stuInfo, "\n");
-            while (tokenizerArticle.hasMoreTokens()) {
-                StringTokenizer tokenizer = new StringTokenizer(tokenizerArticle.nextToken());
-                String name = tokenizer.nextToken();
-                String score = tokenizer.nextToken();
-                Text stu = new Text(name);
-                int intscore = Integer.parseInt(score);
-                log.info("MapStu:"+stu.toString()+" "+intscore);
-                context.write(stu, new IntWritable(intscore));
+        public void map(ImmutableBytesWritable row, Result values, Context context) throws IOException {
+            // extract userKey from the compositeKey (userId + counter)
+            ImmutableBytesWritable userKey = new ImmutableBytesWritable(row.get(), 0, Bytes.SIZEOF_INT);
+            try {
+                System.out.println(userKey);
+                context.write(userKey, one);
+            } catch (InterruptedException e) {
+                throw new IOException(e);
+            }
+            numRecords++;
+            if ((numRecords % 10000) == 0) {
+                context.setStatus("mapper processed " + numRecords + " records so far");
             }
         }
     }
 
-    public static class MyReduce extends Reducer<Text, IntWritable, Text, IntWritable>{
+    public static class MyReducer extends TableReducer<ImmutableBytesWritable, IntWritable, ImmutableBytesWritable> {
 
-        @Override
-        protected void reduce(Text key, Iterable<IntWritable> values,Context context)
+        public void reduce(ImmutableBytesWritable key, Iterable<IntWritable> values, Context context)
                 throws IOException, InterruptedException {
             int sum = 0;
-            int count = 0;
-            Iterator<IntWritable> iterator = values.iterator();
-            while (iterator.hasNext()) {
-                sum += iterator.next().get();
-                count++;
+            for (IntWritable val : values) {
+                sum += val.get();
             }
-            int avg= (int)sum/count;
-            context.write(key,new  IntWritable(avg));
+
+            Put put = new Put(key.get());
+            put.add(Bytes.toBytes("details"), Bytes.toBytes("total"), Bytes.toBytes(sum));
+            System.out.println(String.format("stats :   key : %d,  count : %d", Bytes.toInt(key.get()), sum));
+            context.write(key, put);
         }
-    }
-
-    public  int run(String [] args) throws Exception{
-
-        Job job = new Job(getConf());
-        job.setJarByClass(TagMatch.class);
-        job.setJobName("tagMatch");
-        job.setOutputKeyClass(Text.class);
-        job.setOutputValueClass(IntWritable.class);
-        job.setMapperClass(MyMap.class);
-        job.setCombinerClass(MyReduce.class);
-        job.setReducerClass(MyReduce.class);
-        job.setInputFormatClass(TextInputFormat.class);
-        job.setOutputFormatClass(TextOutputFormat.class);
-        FileInputFormat.addInputPath(job, new Path(args[0]));
-        FileOutputFormat.setOutputPath(job, new Path(args[1]));
-        boolean success=  job.waitForCompletion(true);
-
-        return success ? 0 : 1;
     }
 
     public static void main(String[] args) throws Exception {
-        int ret = ToolRunner.run(new TagMatch(), args);
-        System.exit(ret);
-    }
+        String zookeeper = args[0];
 
-    @Override
-    public Configuration getConf() {
-        return configuration;
-    }
+        HBaseConfiguration conf = new HBaseConfiguration();
+        conf.set("hbase.zookeeper.quorum", zookeeper);
+        conf.set("hbase.zookeeper.property.clientPort", "2181");
 
-    @Override
-    public void setConf(Configuration conf) {
-        conf = new Configuration();
-        configuration=conf;
+        Job job = new Job(conf, "Tag Match Calculator");
+        job.setJarByClass(TagMatch.class);
+        Scan scan = new Scan();
+        String columns = "details";
+        scan.addColumn(Bytes.toBytes("d"), Bytes.toBytes("*"));
+
+        TableMapReduceUtil.initTableMapperJob("access_content", scan, MyMap.class, ImmutableBytesWritable.class, IntWritable.class, job);
+        TableMapReduceUtil.initTableReducerJob("summary_user", MyReducer.class, job);
+        System.exit(job.waitForCompletion(true) ? 0 : 1);
     }
 }
 
