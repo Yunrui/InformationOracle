@@ -42,6 +42,7 @@ java -cp "lib/hadoop/*:lib/hadoop/client/*:lib/mahout/*:lib/*:lib/hbase/*:*:." i
 if [ $method = 'tag' ]
 then
     echo "\033[40;33mExecute Tag Match.......... \033[0m"
+    hadoop jar rec.jar io.rec.TagMatch hbase
 fi
 
 if [ $method = 'lda' ]

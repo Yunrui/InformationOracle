@@ -84,7 +84,7 @@ public class TagMatch {
         String columns = "details";
         scan.addColumn(Bytes.toBytes("d"), Bytes.toBytes("*"));
 
-        TableMapReduceUtil.initTableMapperJob("access_content", scan, MyMap.class, ImmutableBytesWritable.class, IntWritable.class, job);
+        TableMapReduceUtil.initTableMapperJob("content", scan, MyMap.class, ImmutableBytesWritable.class, IntWritable.class, job);
         TableMapReduceUtil.initTableReducerJob("summary_user", MyReducer.class, job);
         System.exit(job.waitForCompletion(true) ? 0 : 1);
     }
