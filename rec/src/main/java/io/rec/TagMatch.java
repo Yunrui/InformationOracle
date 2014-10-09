@@ -22,6 +22,7 @@ import org.apache.hadoop.hbase.HBaseConfiguration;
 import org.apache.hadoop.hbase.HColumnDescriptor;
 import org.apache.hadoop.hbase.HTableDescriptor;
 import org.apache.hadoop.hbase.client.*;
+import org.apache.hadoop.hbase.Cell;
 import org.apache.hadoop.hbase.filter.Filter;
 import org.apache.hadoop.hbase.util.Bytes;
 import org.apache.hadoop.hbase.mapreduce.TableMapReduceUtil;
@@ -41,10 +42,15 @@ public class TagMatch {
         @Override
         public void map(ImmutableBytesWritable row, Result values, Context context) throws IOException {
             // extract userKey from the compositeKey (userId + counter)
-            ImmutableBytesWritable userKey = new ImmutableBytesWritable(row.get(), 0, Bytes.SIZEOF_INT);
             try {
-                System.out.println(userKey);
-                context.write(userKey, one);
+                for(Cell cell : values.rawCells()) {
+                    String f = Bytes.toString(cell.getFamily());
+                    String q = Bytes.toString(cell.getQualifier());
+                    String v = Bytes.toString(cell.getValue());
+
+                    System.out.println(f + "-" + q + "-");
+                }
+                context.write(row, one);
             } catch (InterruptedException e) {
                 throw new IOException(e);
             }
@@ -81,8 +87,8 @@ public class TagMatch {
         Job job = new Job(conf, "Tag Match Calculator");
         job.setJarByClass(TagMatch.class);
         Scan scan = new Scan();
-        String columns = "details";
-        scan.addColumn(Bytes.toBytes("d"), Bytes.toBytes("*"));
+        scan.addFamily(Bytes.toBytes("d"));
+        // scan.addColumn(Bytes.toBytes("m"), Bytes.toBytes("title"));
 
         TableMapReduceUtil.initTableMapperJob("content", scan, MyMap.class, ImmutableBytesWritable.class, IntWritable.class, job);
         TableMapReduceUtil.initTableReducerJob("summary_user", MyReducer.class, job);
